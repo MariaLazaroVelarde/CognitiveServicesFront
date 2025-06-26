@@ -1,8 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { CopichatService } from '../services/copichat.service';
-import { Copichat } from '../models/copichat.model';
+import { CopilotService } from '../services/copilot.service';
+import { Copilot } from '../models/copilot.model';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -13,8 +13,10 @@ import Swal from 'sweetalert2';
   styleUrl: './chatbot.component.css'
 })
 export class ChatbotComponent implements OnInit {
-  chats: Copichat[] = [];
-  chatsActivos: Copichat[] = [];
+  vistaActual: 'ACTIVOS' | 'INACTIVOS' = 'ACTIVOS';
+  chats: Copilot[] = [];
+  chatsActivos: Copilot[] = [];
+  chatsInactivos: Copilot[] = [];
   nuevaPregunta: string = '';
   preguntaEditando: string = '';
   chatEditandoId: number | null = null;
@@ -22,10 +24,11 @@ export class ChatbotComponent implements OnInit {
   loading: boolean = false;
   error: string = '';
 
-  constructor(private copichatService: CopichatService) {}
+  constructor(private copilotService: CopilotService) {}
 
   ngOnInit(): void {
     this.cargarChatsActivos();
+    this.cargarChatsInactivos();
   }
 
   // Crear nueva pregunta
@@ -53,7 +56,7 @@ export class ChatbotComponent implements OnInit {
       }
     });
 
-    this.copichatService.crear(this.nuevaPregunta).subscribe({
+    this.copilotService.crear(this.nuevaPregunta).subscribe({
       next: (nuevoChat) => {
         this.chatsActivos.unshift(nuevoChat);
         this.nuevaPregunta = '';
@@ -83,7 +86,7 @@ export class ChatbotComponent implements OnInit {
   }
 
   // Iniciar edición
-  iniciarEdicion(chat: Copichat): void {
+  iniciarEdicion(chat: Copilot): void {
     this.chatEditandoId = chat.id;
     this.preguntaEditando = chat.pregunta;
   }
@@ -119,7 +122,7 @@ export class ChatbotComponent implements OnInit {
       }
     });
 
-    this.copichatService.editar(id, this.preguntaEditando).subscribe({
+    this.copilotService.editar(id, this.preguntaEditando).subscribe({
       next: (chatEditado) => {
         const index = this.chatsActivos.findIndex(c => c.id === id);
         if (index !== -1) {
@@ -151,8 +154,8 @@ export class ChatbotComponent implements OnInit {
     });
   }
 
-  // Eliminar lógicamente
-  eliminarLogico(id: number): void {
+  // Eliminar físico
+  eliminarFisico(id: number): void {
     Swal.fire({
       title: '¿Estás seguro?',
       text: '¿Quieres eliminar esta conversación?',
@@ -177,7 +180,7 @@ export class ChatbotComponent implements OnInit {
           }
         });
 
-        this.copichatService.eliminarLogico(id).subscribe({
+        this.copilotService.eliminar(id).subscribe({
           next: () => {
             this.chatsActivos = this.chatsActivos.filter(c => c.id !== id);
             this.loading = false;
@@ -207,8 +210,8 @@ export class ChatbotComponent implements OnInit {
     });
   }
 
-  // Eliminar físicamente
-  eliminarFisico(id: number): void {
+  // Eliminar logico
+  eliminarLogico(id: number): void {
     Swal.fire({
       title: '¡Advertencia!',
       text: '¿Estás seguro de que quieres eliminar permanentemente esta conversación? Esta acción no se puede deshacer.',
@@ -234,7 +237,7 @@ export class ChatbotComponent implements OnInit {
           }
         });
 
-        this.copichatService.eliminarFisico(id).subscribe({
+        this.copilotService.eliminate(id).subscribe({
           next: () => {
             this.chats = this.chats.filter(c => c.id !== id);
             this.chatsActivos = this.chatsActivos.filter(c => c.id !== id);
@@ -291,7 +294,7 @@ export class ChatbotComponent implements OnInit {
           }
         });
 
-        this.copichatService.restaurar(id).subscribe({
+        this.copilotService.restaurar(id).subscribe({
           next: (chatRestaurado) => {
             this.chatsActivos.push(chatRestaurado);
             this.chats = this.chats.filter(c => c.id !== id);
@@ -327,7 +330,7 @@ export class ChatbotComponent implements OnInit {
     this.loading = true;
     this.error = '';
 
-    this.copichatService.listarActivos().subscribe({
+    this.copilotService.listarActivos().subscribe({
       next: (chats) => {
         this.chatsActivos = chats;
         this.loading = false;
@@ -347,12 +350,44 @@ export class ChatbotComponent implements OnInit {
     });
   }
 
+  // Cargar chats inactivos
+  cargarChatsInactivos(): void {
+  this.loading = true;
+  this.error = '';
+
+  this.copilotService.listarInactivos().subscribe({
+    next: (chats) => {
+      this.chatsInactivos = chats;
+      this.loading = false;
+    },
+    error: (err) => {
+      this.error = 'Error al cargar los chats inactivos';
+      this.loading = false;
+      console.error(err);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'No se pudieron cargar los chats inactivos. Inténtalo nuevamente.',
+        confirmButtonColor: '#d33'
+      });
+    }
+  });
+}
+
+refrescarVistaActual(): void {
+    if (this.vistaActual === 'ACTIVOS') {
+      this.cargarChatsActivos();
+    } else {
+      this.cargarChatsInactivos();
+    }
+  }
+
   // Cargar todos los chats (incluyendo eliminados)
   cargarTodosLosChats(): void {
     this.loading = true;
     this.error = '';
 
-    this.copichatService.listarTodo().subscribe({
+    this.copilotService.listar().subscribe({
       next: (chats) => {
         this.chats = chats;
         this.loading = false;
@@ -383,8 +418,8 @@ export class ChatbotComponent implements OnInit {
   }
 
   // Obtener chats eliminados
-  get chatsEliminados(): Copichat[] {
-    return this.chats.filter(chat => chat.status === 'ELIMINADO');
+  get chatsEliminados(): Copilot[] {
+    return this.chats.filter(chat => chat.state === 'ELIMINADO');
   }
 
   // Formatear fecha

@@ -1,7 +1,8 @@
 <!-- Font Awesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
 <div class="chatbot-container">
   <!-- Header -->
   <div class="chatbot-header">
@@ -12,14 +13,21 @@
     <div class="header-actions">
       <button 
         class="btn btn-secondary" 
-        (click)="toggleMostrarEliminados()"
-        [class.active]="mostrarEliminados">
+        (click)="vistaActual = 'ACTIVOS'; cargarChatsActivos()"
+        [class.active]="vistaActual === 'ACTIVOS'">
+        <i class="fas fa-comments"></i>
+        Ver Activos
+      </button>
+      <button 
+        class="btn btn-danger" 
+        (click)="vistaActual = 'INACTIVOS'; cargarTodosLosChats()"
+        [class.active]="vistaActual === 'INACTIVOS'">
         <i class="fas fa-trash"></i>
-        {{ mostrarEliminados ? 'Ver Activos' : 'Ver Eliminados' }}
+        Ver Inactivos
       </button>
       <button 
         class="btn btn-primary" 
-        (click)="cargarChatsActivos()"
+        (click)="refrescarVistaActual()"
         [disabled]="loading">
         <i class="fas fa-sync-alt" [class.fa-spin]="loading"></i>
         Actualizar
@@ -37,7 +45,7 @@
   </div>
 
   <!-- Nueva Pregunta Form -->
-  <div class="nueva-pregunta-form" *ngIf="!mostrarEliminados">
+  <div class="nueva-pregunta-form" *ngIf="vistaActual === 'ACTIVOS'">
     <div class="input-group">
       <input 
         type="text" 
@@ -65,11 +73,11 @@
   </div>
 
   <!-- Chats Activos -->
-  <div class="chats-section" *ngIf="!mostrarEliminados">
-    <h2>
+  <div class="chats-section" *ngIf="vistaActual === 'ACTIVOS'">
+    <!--<h2>
       <i class="fas fa-comments"></i>
-      Conversaciones Activas ({{ chatsActivos.length }})
-    </h2>
+      Conversaciones Activas ({{ chatsActivos.length }}) 
+    </h2>-->
     
     <div class="chat-list" *ngIf="chatsActivos.length > 0; else noChatsActivos">
       <div class="chat-item" *ngFor="let chat of chatsActivos">
@@ -77,8 +85,8 @@
           <div class="chat-info">
             <span class="chat-id">#{{ chat.id }}</span>
             <span class="chat-date">{{ formatearFecha(chat.fecha) }}</span>
-            <span class="chat-status" [class]="'status-' + chat.status.toLowerCase()">
-              {{ chat.status }}
+            <span class="chat-status" [class]="'status-' + chat.state.toLowerCase()">
+              {{ chat.state }}
             </span>
           </div>
           <div class="chat-actions">
@@ -148,21 +156,21 @@
     </ng-template>
   </div>
 
-  <!-- Chats Eliminados -->
-  <div class="chats-section" *ngIf="mostrarEliminados">
-    <h2>
+  <!-- Chats Inactivos -->
+  <div class="chats-section" *ngIf="vistaActual === 'INACTIVOS'">
+    <!--<h2>
       <i class="fas fa-trash"></i>
-      Conversaciones Eliminadas ({{ chatsEliminados.length }})
-    </h2>
+      Conversaciones Inactivas ({{ chatsInactivos.length }})
+    </h2> -->
     
-    <div class="chat-list" *ngIf="chatsEliminados.length > 0; else noChatsEliminados">
-      <div class="chat-item eliminated" *ngFor="let chat of chatsEliminados">
+    <div class="chat-list" *ngIf="chatsInactivos.length > 0; else noChatsInactivos">
+      <div class="chat-item eliminated" *ngFor="let chat of chatsInactivos">
         <div class="chat-header">
           <div class="chat-info">
             <span class="chat-id">#{{ chat.id }}</span>
             <span class="chat-date">{{ formatearFecha(chat.fecha) }}</span>
             <span class="chat-status status-eliminado">
-              {{ chat.status }}
+              {{ chat.state }}
             </span>
           </div>
           <div class="chat-actions">
@@ -200,10 +208,10 @@
       </div>
     </div>
 
-    <ng-template #noChatsEliminados>
+    <ng-template #noChatsInactivos>
       <div class="no-data">
         <i class="fas fa-trash-alt"></i>
-        <p>No hay conversaciones eliminadas</p>
+        <p>No hay conversaciones inactivas</p>
       </div>
     </ng-template>
   </div>

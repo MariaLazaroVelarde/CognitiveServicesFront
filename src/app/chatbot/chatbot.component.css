@@ -7,21 +7,21 @@
 
 /* Header */
 .chatbot-header {
+  background: linear-gradient(to right, #ad5eee, #b7b8f3);
+  color: #fff;
+  padding: 20px 30px;
+  border-radius: 14px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 30px;
-  padding: 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 12px;
-  color: white;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
 }
 
 .chatbot-header h1 {
-  margin: 0;
-  font-size: 2rem;
-  font-weight: 600;
+  font-size: 1.8rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .chatbot-header h1 i {

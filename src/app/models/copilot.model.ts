@@ -1,7 +1,7 @@
-export interface Copichat {
+export interface Copilot {
   id: number;
   pregunta: string;
   respuesta: string;
   fecha: string;        
-  status: string;
+  state: string;
 }

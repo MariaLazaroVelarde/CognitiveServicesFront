@@ -1,0 +1,210 @@
+<!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<div class="chatbot-container">
+  <!-- Header -->
+  <div class="chatbot-header">
+    <h1>
+      <i class="fas fa-robot"></i>
+      Copilot Bot
+    </h1>
+    <div class="header-actions">
+      <button 
+        class="btn btn-secondary" 
+        (click)="toggleMostrarEliminados()"
+        [class.active]="mostrarEliminados">
+        <i class="fas fa-trash"></i>
+        {{ mostrarEliminados ? 'Ver Activos' : 'Ver Eliminados' }}
+      </button>
+      <button 
+        class="btn btn-primary" 
+        (click)="cargarChatsActivos()"
+        [disabled]="loading">
+        <i class="fas fa-sync-alt" [class.fa-spin]="loading"></i>
+        Actualizar
+      </button>
+    </div>
+  </div>
+
+  <!-- Error Message -->
+  <div class="alert alert-danger" *ngIf="error">
+    <i class="fas fa-exclamation-triangle"></i>
+    {{ error }}
+    <button type="button" class="close" (click)="error = ''">
+      <span>&times;</span>
+    </button>
+  </div>
+
+  <!-- Nueva Pregunta Form -->
+  <div class="nueva-pregunta-form" *ngIf="!mostrarEliminados">
+    <div class="input-group">
+      <input 
+        type="text" 
+        class="form-control" 
+        placeholder="Escribe tu pregunta aquí..."
+        [(ngModel)]="nuevaPregunta"
+        (keyup.enter)="crearPregunta()"
+        [disabled]="loading">
+      <div class="input-group-append">
+        <button 
+          class="btn btn-success" 
+          (click)="crearPregunta()"
+          [disabled]="loading || !nuevaPregunta.trim()">
+          <i class="fas fa-paper-plane"></i>
+          Enviar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading Spinner -->
+  <div class="loading-spinner" *ngIf="loading">
+    <i class="fas fa-spinner fa-spin"></i>
+    Cargando...
+  </div>
+
+  <!-- Chats Activos -->
+  <div class="chats-section" *ngIf="!mostrarEliminados">
+    <h2>
+      <i class="fas fa-comments"></i>
+      Conversaciones Activas ({{ chatsActivos.length }})
+    </h2>
+    
+    <div class="chat-list" *ngIf="chatsActivos.length > 0; else noChatsActivos">
+      <div class="chat-item" *ngFor="let chat of chatsActivos">
+        <div class="chat-header">
+          <div class="chat-info">
+            <span class="chat-id">#{{ chat.id }}</span>
+            <span class="chat-date">{{ formatearFecha(chat.fecha) }}</span>
+            <span class="chat-status" [class]="'status-' + chat.status.toLowerCase()">
+              {{ chat.status }}
+            </span>
+          </div>
+          <div class="chat-actions">
+            <button 
+              class="btn btn-sm btn-outline-primary" 
+              (click)="iniciarEdicion(chat)"
+              *ngIf="chatEditandoId !== chat.id">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button 
+              class="btn btn-sm btn-outline-danger" 
+              (click)="eliminarLogico(chat.id)"
+              *ngIf="chatEditandoId !== chat.id">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Modo Edición -->
+        <div class="chat-edit" *ngIf="chatEditandoId === chat.id">
+          <div class="input-group">
+            <input 
+              type="text" 
+              class="form-control" 
+              [(ngModel)]="preguntaEditando">
+            <div class="input-group-append">
+              <button 
+                class="btn btn-success btn-sm" 
+                (click)="guardarEdicion(chat.id)">
+                <i class="fas fa-check"></i>
+              </button>
+              <button 
+                class="btn btn-secondary btn-sm" 
+                (click)="cancelarEdicion()">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modo Vista -->
+        <div class="chat-content" *ngIf="chatEditandoId !== chat.id">
+          <div class="pregunta">
+            <div class="message-label">
+              <i class="fas fa-user"></i>
+              Pregunta:
+            </div>
+            <div class="message-text">{{ chat.pregunta }}</div>
+          </div>
+          <div class="respuesta" *ngIf="chat.respuesta">
+            <div class="message-label">
+              <i class="fas fa-robot"></i>
+              Respuesta:
+            </div>
+            <div class="message-text">{{ chat.respuesta }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <ng-template #noChatsActivos>
+      <div class="no-data">
+        <i class="fas fa-comment-slash"></i>
+        <p>No hay conversaciones activas</p>
+        <p class="text-muted">Comienza escribiendo una pregunta arriba</p>
+      </div>
+    </ng-template>
+  </div>
+
+  <!-- Chats Eliminados -->
+  <div class="chats-section" *ngIf="mostrarEliminados">
+    <h2>
+      <i class="fas fa-trash"></i>
+      Conversaciones Eliminadas ({{ chatsEliminados.length }})
+    </h2>
+    
+    <div class="chat-list" *ngIf="chatsEliminados.length > 0; else noChatsEliminados">
+      <div class="chat-item eliminated" *ngFor="let chat of chatsEliminados">
+        <div class="chat-header">
+          <div class="chat-info">
+            <span class="chat-id">#{{ chat.id }}</span>
+            <span class="chat-date">{{ formatearFecha(chat.fecha) }}</span>
+            <span class="chat-status status-eliminado">
+              {{ chat.status }}
+            </span>
+          </div>
+          <div class="chat-actions">
+            <button 
+              class="btn btn-sm btn-outline-success" 
+              (click)="restaurar(chat.id)"
+              title="Restaurar">
+              <i class="fas fa-undo"></i>
+            </button>
+            <button 
+              class="btn btn-sm btn-outline-danger" 
+              (click)="eliminarFisico(chat.id)"
+              title="Eliminar permanentemente">
+              <i class="fas fa-trash-alt"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="chat-content">
+          <div class="pregunta">
+            <div class="message-label">
+              <i class="fas fa-user"></i>
+              Pregunta:
+            </div>
+            <div class="message-text">{{ chat.pregunta }}</div>
+          </div>
+          <div class="respuesta" *ngIf="chat.respuesta">
+            <div class="message-label">
+              <i class="fas fa-robot"></i>
+              Respuesta:
+            </div>
+            <div class="message-text">{{ chat.respuesta }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <ng-template #noChatsEliminados>
+      <div class="no-data">
+        <i class="fas fa-trash-alt"></i>
+        <p>No hay conversaciones eliminadas</p>
+      </div>
+    </ng-template>
+  </div>
+</div>
